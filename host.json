@@ -1,0 +1,16 @@
+{
+    "version": "2.0",
+    "extensions": {
+        "blobs": {},
+        "queues": {
+            "batchSize": 1
+        }
+    },
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": true
+            }
+        }
+    }
+}
