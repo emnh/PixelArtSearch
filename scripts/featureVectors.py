@@ -43,7 +43,10 @@ def step1():
         # List the blobs in the container
         blob_list = container_client.list_blobs()
         for blob in blob_list:
-            print(blob.name)    
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob.name)
+            properties = blob_client.get_blob_properties()
+            #length = BlockBlobService.get_blob_properties(blob_service_client, container_name, blob.name).properties.content_length
+            print(blob.name + '\t' + str(properties.size))
 
     except Exception as ex:
         print('Exception:')
@@ -136,4 +139,4 @@ def step2():
     logfd.close()
 
 if __name__ == '__main__':
-    step2()
+    step1()

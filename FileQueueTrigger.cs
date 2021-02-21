@@ -24,6 +24,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
             [QueueTrigger("filequeue", Connection = "AzureWebJobsStorage")] string filename,
             [Blob("opengameart/{queueTrigger}")] CloudBlockBlob blob,
             [Queue("zipqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> msg,
+            [Queue("imgqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> imgs,
             ILogger log)
         {
             log.LogInformation($"C# FileQueueTrigger function processed page {filename}");
@@ -39,6 +40,13 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                 
                 if (isZip || isRar) {
                     msg.Add(filename);
+                }
+
+                var isJpg = filename.Split('.').Last().ToLower() == "png";
+                var isPng = filename.Split('.').Last().ToLower() == "jpg";
+
+                if (isJpg || isPng) {
+                    imgs.Add(filename);
                 }
             }
             catch(HttpRequestException e)
