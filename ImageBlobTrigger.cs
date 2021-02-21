@@ -1,3 +1,4 @@
+/*
 using System;
 using System.IO;
 using Microsoft.Azure.WebJobs;
@@ -27,3 +28,4 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
         }
     }
 }
+*/

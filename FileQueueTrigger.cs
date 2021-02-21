@@ -29,11 +29,9 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
         {
             log.LogInformation($"C# FileQueueTrigger function processed page {filename}");
 
-            byte[] responseBody = null;
-
             try	
             {
-                responseBody = await Common.ReadURIOrCacheBinary(blob, Common.FileURI + filename, client);
+                var (responseBody, size) = await Common.ReadURIOrCacheBinary(blob, Common.FileURI + filename, client);
 
                 var isZip = filename.Split('.').Last().ToLower() == "zip";
                 var isRar = filename.Split('.').Last().ToLower() == "rar";
@@ -42,12 +40,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                     msg.Add(filename);
                 }
 
-                var isJpg = filename.Split('.').Last().ToLower() == "png";
-                var isPng = filename.Split('.').Last().ToLower() == "jpg";
-
-                if (isJpg || isPng) {
-                    imgs.Add(filename);
-                }
+                await Common.AfterUploadFile(filename, size, log, imgs);
             }
             catch(HttpRequestException e)
             {

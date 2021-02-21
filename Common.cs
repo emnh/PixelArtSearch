@@ -11,6 +11,8 @@ using Newtonsoft.Json;
 using HtmlAgilityPack;
 using System.Web;
 using Microsoft.WindowsAzure.Storage.Blob;
+//using Microsoft.Data.SqlClient;
+using System.Linq;
 
 namespace HvidevoldDevelopmentENK.GetPixelArt
 {
@@ -22,6 +24,9 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
 
         public static string ExtractFolder = "/extract";
         public static string Container = "opengameart";
+
+        public static bool CreatedDatabase = false;
+
         public static async Task<string> ReadURIOrCache(CloudBlockBlob blob, string uri, HttpClient client)
         {    
             string responseBody = null;
@@ -42,7 +47,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
             return responseBody;
         }
 
-        public static async Task<byte[]> ReadURIOrCacheBinary(CloudBlockBlob blob, string uri, HttpClient client, bool needsData = false)
+        public static async Task<Tuple<byte[], long>> ReadURIOrCacheBinary(CloudBlockBlob blob, string uri, HttpClient client, bool needsData = false)
         {    
             //byte[] responseBody;
             MemoryStream ms = new MemoryStream();
@@ -62,7 +67,58 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                 }
             }
             
-            return ms.ToArray();
+            return Tuple.Create(ms.ToArray(), blob.Properties.Length);
+        }
+
+        public static async Task<bool> UpdateDatabase(string fileName, long fileSize, ILogger log) {
+            return false;
+            // var str = Environment.GetEnvironmentVariable("SqlDb");
+            // int rows = 0;
+
+            // using (SqlConnection conn = new SqlConnection(str))
+            // {
+            //     conn.Open();
+            //     if (!CreatedDatabase) {
+            //         var text = @"
+            //                     if not exists (select * from sysobjects where name='blobfiles' and xtype='U')
+            //                         create table opengameartblobfiles (
+            //                             id              INT           NOT NULL    IDENTITY    PRIMARY KEY,
+            //                             name            VARCHAR(MAX)  NOT NULL    UNIQUE,
+            //                             size            INT           NOT NULL,
+            //                             hasfeatures     BIT           NOT NULL,
+            //                             inmilvus        BIT           NOT NULL
+            //                         )
+            //                     go";
+            //         using (SqlCommand cmd = new SqlCommand(text, conn))
+            //         {
+            //             // Execute the command and log the # rows affected.
+            //             var tableRows = await cmd.ExecuteNonQueryAsync();
+            //             log.LogInformation($"Create Table: {tableRows} rows were updated");
+            //         }
+            //         CreatedDatabase = true;
+            //     }
+                
+            //     var update = $"INSERT INTO opengameartblobfiles ({fileName}, {fileSize}, 0, 0);";
+
+            //     using (SqlCommand cmd = new SqlCommand(update, conn))
+            //     {
+            //         // Execute the command and log the # rows affected.
+            //         rows = await cmd.ExecuteNonQueryAsync();
+            //         log.LogInformation($"UpdateDatabase file: {fileName} of size {fileSize} where {rows} rows were updated.");
+            //     }
+            // }
+            // return rows > 0;
+        }
+
+        public static async Task AfterUploadFile(string fileName, long fileSize, ILogger log, ICollector<string> imgs) {
+            if (await UpdateDatabase(fileName, fileSize, log)) {
+                var isJpg = fileName.Split('.').Last().ToLower() == "png";
+                var isPng = fileName.Split('.').Last().ToLower() == "jpg";
+
+                if (isJpg || isPng) {
+                    imgs.Add(fileName);
+                }
+            };
         }
     }
 }

@@ -48,13 +48,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                     } else {
                         await using var fileStream = archiveEntry.OpenEntryStream();
                         await blockBlob.UploadFromStreamAsync(fileStream);
-            
-                        var isJpg = outBlobName.Split('.').Last().ToLower() == "png";
-                        var isPng = outBlobName.Split('.').Last().ToLower() == "jpg";
-
-                        if (isJpg || isPng) {
-                            imgs.Add(outBlobName);
-                        }
+                        await Common.AfterUploadFile(outBlobName, blockBlob.Properties.Length, log, imgs);
                         
                         log.LogInformation($"{outBlobName} processed successfully and moved to destination container.");
                     }
