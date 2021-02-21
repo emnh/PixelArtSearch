@@ -53,9 +53,14 @@ def step1():
         print(ex)
 
 def step2():
-    with open('allblobs.txt') as fd:
+    with open('log.txt') as fd:
+        seen = set([x.strip() for x in fd.readlines()])
+    with open('putToSqlQueue.txt') as fd:
         files = [fname.strip() for fname in fd.readlines()]
         files = [fname for fname in files if fname.lower().endswith('.jpg') or fname.lower().endswith('.png')]
+        files = [fname for fname in files if not fname in seen]
+        files = [fname for fname in files if not 'MACOSX' in fname]
+    print(len(files))
 
     from tensorflow.keras.applications.vgg16 import VGG16
     from tensorflow.keras.preprocessing import image
@@ -99,35 +104,37 @@ def step2():
     print("\nProcessing blobs...")
 
     # List the blobs in the container
-    for fname in files:
+    for i, fname in enumerate(files):
         try:
             # Create a blob client using the local file name as the name for the blob
-            print("Reading blob", fname)
+            print(i, "Reading blob", fname)
             starts = []
             starts.append(time.time())
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=fname)
             imgdata = blob_client.download_blob().readall()
 
-            print("Preparing image", fname)
+            print(i, "Preparing image", fname)
             starts.append(time.time())
             file_imgdata = BytesIO(imgdata)
             dt = Image.open(file_imgdata)
             pimg = prepImage(dt)
 
-            print("Computing feature vector", fname)
+            print(i, "Computing feature vector", fname)
             starts.append(time.time())
             features = feat_extractor.predict(pimg)
-            print("Features", features)
+            print(i, "Features", features)
 
-            print("Uploading feature vector", fname + ".np")
+            print(i, "Uploading feature vector", fname + ".np")
             starts.append(time.time())
             blob_writer = blob_service_client.get_blob_client(container=container_name, blob=fname + ".np")
             blob_writer.upload_blob(features.flatten().tobytes(), overwrite=True)
-            
-            end = time.time()
-            print(["read", "prep", "feature", "upload"], [end - start for start in starts])
 
-            print("Done with", fname)
+            end = time.time()
+            print(i, ["read", "prep", "feature", "upload"], [end - start for start in starts])
+
+            print(i, "Done with", fname)
+
+            print('')
 
             logfd.write(fname + '\n')
 
@@ -139,4 +146,4 @@ def step2():
     logfd.close()
 
 if __name__ == '__main__':
-    step1()
+    step2()

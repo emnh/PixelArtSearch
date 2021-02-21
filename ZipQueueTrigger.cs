@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.WindowsAzure.Storage;
+using Microsoft.Azure.Storage;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using HtmlAgilityPack;
 using System.Web;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 using System.Collections.Generic;
 using System.Linq;
 using SharpCompress.Archives;
@@ -26,7 +26,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
     
     public static class ZipQueueTrigger
     {
-        public static async Task Extract(IEnumerable<IArchiveEntry> archiveEntries, string zipfile, CloudBlobContainer container, ILogger log, ICollector<string> imgs) {                    
+        public static async Task Extract(IEnumerable<IArchiveEntry> archiveEntries, string zipfile, CloudBlobContainer container, ILogger log, ICollector<string> sqls) {                    
             string lastOutBlobName = Common.ExtractFolder + zipfile + "/" + HttpUtility.UrlEncode(archiveEntries.Last().Key, Encoding.UTF8);
             var lastOutBlob = container.GetBlockBlobReference(lastOutBlobName);
             if (await lastOutBlob.ExistsAsync() && lastOutBlob.Properties.Length == archiveEntries.Last().Size) {
@@ -48,10 +48,11 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                     } else {
                         await using var fileStream = archiveEntry.OpenEntryStream();
                         await blockBlob.UploadFromStreamAsync(fileStream);
-                        await Common.AfterUploadFile(outBlobName, blockBlob.Properties.Length, log, imgs);
+                        //await Common.AfterUploadFile(outBlobName, blockBlob.Properties.Length, log, imgs);
                         
                         log.LogInformation($"{outBlobName} processed successfully and moved to destination container.");
                     }
+                    sqls.Add(outBlobName);
                 }
             }
         }
@@ -61,7 +62,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
             QueueTrigger("zipqueue", Connection = "AzureWebJobsStorage")] string zipfile,
             [Blob("opengameart/{queueTrigger}")] CloudBlockBlob blob,
             [StorageAccount("AzureWebJobsStorage")] CloudStorageAccount storageAccount,
-            [Queue("imgqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> imgs,
+            [Queue("sqlqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> sqls,
             ILogger log)
         {
             log.LogInformation($"C# ZipQueueTrigger function processed: {zipfile}");
@@ -91,11 +92,11 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
 
                         if (isZip) {
                             using (var reader = ZipArchive.Open(blobMemStream, zipReaderOptions)) {
-                                await Extract(reader.Entries, zipfile, container, log, imgs);
+                                await Extract(reader.Entries, zipfile, container, log, sqls);
                             }
                         } else if (isRar) {
                             using (var reader = RarArchive.Open(blobMemStream, zipReaderOptions)) {
-                                await Extract(reader.Entries, zipfile, container, log, imgs);
+                                await Extract(reader.Entries, zipfile, container, log, sqls);
                             }
                         }
                     }

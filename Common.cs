@@ -10,8 +10,8 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using HtmlAgilityPack;
 using System.Web;
-using Microsoft.WindowsAzure.Storage.Blob;
-//using Microsoft.Data.SqlClient;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 
 namespace HvidevoldDevelopmentENK.GetPixelArt
@@ -71,43 +71,42 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
         }
 
         public static async Task<bool> UpdateDatabase(string fileName, long fileSize, ILogger log) {
-            return false;
-            // var str = Environment.GetEnvironmentVariable("SqlDb");
-            // int rows = 0;
+            var connectionString = Environment.GetEnvironmentVariable("SqlDb");
+            //var connectionString = ConfigurationManager.ConnectionStrings["MyDB"].ConnectionString;
+            int rows = 0;
 
-            // using (SqlConnection conn = new SqlConnection(str))
-            // {
-            //     conn.Open();
-            //     if (!CreatedDatabase) {
-            //         var text = @"
-            //                     if not exists (select * from sysobjects where name='blobfiles' and xtype='U')
-            //                         create table opengameartblobfiles (
-            //                             id              INT           NOT NULL    IDENTITY    PRIMARY KEY,
-            //                             name            VARCHAR(MAX)  NOT NULL    UNIQUE,
-            //                             size            INT           NOT NULL,
-            //                             hasfeatures     BIT           NOT NULL,
-            //                             inmilvus        BIT           NOT NULL
-            //                         )
-            //                     go";
-            //         using (SqlCommand cmd = new SqlCommand(text, conn))
-            //         {
-            //             // Execute the command and log the # rows affected.
-            //             var tableRows = await cmd.ExecuteNonQueryAsync();
-            //             log.LogInformation($"Create Table: {tableRows} rows were updated");
-            //         }
-            //         CreatedDatabase = true;
-            //     }
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                if (!CreatedDatabase) {
+                    var text = @"if not exists (select * from sysobjects where name='opengameartblobfiles' and xtype='U')
+    create table opengameartblobfiles (
+        id              INT           NOT NULL    IDENTITY    PRIMARY KEY,
+        name            VARCHAR(900)  NOT NULL    UNIQUE,
+        size            INT           NOT NULL,
+        hasfeatures     BIT           NOT NULL,
+        inmilvus        BIT           NOT NULL
+    )";
+                    using (SqlCommand cmd = new SqlCommand(text, conn))
+                    {
+                        // Execute the command and log the # rows affected.
+                        var tableRows = await cmd.ExecuteNonQueryAsync();
+                        log.LogInformation($"Create Table: {tableRows} rows were updated");
+                    }
+                    CreatedDatabase = true;
+                }
                 
-            //     var update = $"INSERT INTO opengameartblobfiles ({fileName}, {fileSize}, 0, 0);";
+                var update = $"INSERT INTO opengameartblobfiles (name, size, hasfeatures, inmilvus) VALUES ('{fileName}', {fileSize}, 0, 0);";
+                log.LogInformation($"Trying SQL: {update}");
 
-            //     using (SqlCommand cmd = new SqlCommand(update, conn))
-            //     {
-            //         // Execute the command and log the # rows affected.
-            //         rows = await cmd.ExecuteNonQueryAsync();
-            //         log.LogInformation($"UpdateDatabase file: {fileName} of size {fileSize} where {rows} rows were updated.");
-            //     }
-            // }
-            // return rows > 0;
+                using (SqlCommand cmd = new SqlCommand(update, conn))
+                {
+                    // Execute the command and log the # rows affected.
+                    rows = await cmd.ExecuteNonQueryAsync();
+                    log.LogInformation($"UpdateDatabase file: {fileName} of size {fileSize} where {rows} rows were updated.");
+                }
+            }
+            return rows > 0;
         }
 
         public static async Task AfterUploadFile(string fileName, long fileSize, ILogger log, ICollector<string> imgs) {

@@ -10,7 +10,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using HtmlAgilityPack;
 using System.Web;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 using System.Linq;
 
 namespace HvidevoldDevelopmentENK.GetPixelArt
@@ -24,7 +24,7 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
             [QueueTrigger("filequeue", Connection = "AzureWebJobsStorage")] string filename,
             [Blob("opengameart/{queueTrigger}")] CloudBlockBlob blob,
             [Queue("zipqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> msg,
-            [Queue("imgqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> imgs,
+            [Queue("sqlqueue"), StorageAccount("AzureWebJobsStorage")] ICollector<string> sqls,
             ILogger log)
         {
             log.LogInformation($"C# FileQueueTrigger function processed page {filename}");
@@ -40,7 +40,8 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                     msg.Add(filename);
                 }
 
-                await Common.AfterUploadFile(filename, size, log, imgs);
+                sqls.Add(filename);
+                //await Common.AfterUploadFile(filename, size, log, imgs);
             }
             catch(HttpRequestException e)
             {

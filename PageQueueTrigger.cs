@@ -10,7 +10,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using HtmlAgilityPack;
 using System.Web;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 using System.Collections.Generic;
 
 namespace HvidevoldDevelopmentENK.GetPixelArt
