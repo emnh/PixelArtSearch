@@ -93,6 +93,11 @@ namespace HvidevoldDevelopmentENK.GetPixelArt
                         var tableRows = await cmd.ExecuteNonQueryAsync();
                         log.LogInformation($"Create Table: {tableRows} rows were updated");
                     }
+                    using (SqlCommand cmd = new SqlCommand("@CREATE INDEX inmilvus1 ON opengameartblobfiles (inmilvus);", conn)) {
+                        // Execute the command and log the # rows affected.
+                        var tableRows = await cmd.ExecuteNonQueryAsync();
+                        log.LogInformation($"Create Index for Table: {tableRows} rows were updated");
+                    }
                     CreatedDatabase = true;
                 }
                 
