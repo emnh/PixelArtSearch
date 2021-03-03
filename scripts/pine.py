@@ -43,6 +43,7 @@ def downloadBlob(args):
     blob_service_client = downloadBlobContext.blob_service_client
     container_client = downloadBlobContext.container_client
     try:
+        dest = storepath + path
         if os.path.exists(dest):
             with open(dest, 'rb') as infd:
                filedata = infd.read()
