@@ -22,6 +22,7 @@ from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, _
 
 class DBC(): pass
 downloadBlobContext = DBC()
+storepath = '/mnt/data2/opengameart2/'
 
 def main():
     'entry point'
@@ -32,6 +33,7 @@ def main():
 
     pinecone.init(api_key=apiKey)
 
+    #provision()
     loadData(connectionString)
 
 def downloadBlob(args):
@@ -40,9 +42,14 @@ def downloadBlob(args):
     blob_service_client = downloadBlobContext.blob_service_client
     container_client = downloadBlobContext.container_client
     try:
-        blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
-        filedata = blob_client.download_blob().content_as_bytes()
-        return (vid, path, filedata)
+        if os.path.exists(dest):
+            with open(dest, 'rb') as infd:
+               filedata = infd.read()
+            return (vid, path, filedata, True)
+        else:
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=path)
+            filedata = blob_client.download_blob().content_as_bytes()
+            return (vid, path, filedata, False)
     except:
         e = sys.exc_info()[0]
         print('Error on:', path, e, file=sys.stderr)
@@ -59,8 +66,8 @@ def listFiles(vidStart, batchSize):
                 continue
             if path.endswith('.np'):
                 dest = '/mnt/data2/opengameart2/' + path
-                if os.path.exists(dest):
-                    continue
+                #if os.path.exists(dest):
+                #    continue
                 vid += 1
                 batch.append([vid, path])
                 if len(batch) >= batchSize:
@@ -79,7 +86,7 @@ def loadData(connectionString):
     downloadBlobContext.blob_service_client = blob_service_client
     downloadBlobContext.container_client = container_client
 
-    conn = pinecone.connector.connect("opengameart-search")
+    conn = pinecone.connector.connect("opengameart-search2")
     batch = []
     paths = []
     items = []
@@ -91,17 +98,20 @@ def loadData(connectionString):
             lines = fd.readlines()
             vidStart, lastPath = lines[-1].split('\t')
             vidStart = int(vidStart)
+
     for batch in listFiles(vidStart, batchSize):
-        for vid, path, filedata in pool.map(downloadBlob, batch):
+        for vid, path, filedata, saved in pool.map(downloadBlob, batch):
             try:
                 if len(filedata) == 16384:
-                    dest = '/mnt/data2/opengameart2/' + path
+                    dest = storepath + path
                     dname = os.path.split(dest)[0]
                     if not os.path.exists(dname):
                         os.makedirs(dname)
-                    with open(dest, 'wb') as ofd:
-                        ofd.write(filedata)
-                    vector = np.frombuffer(filedata)
+                    if not saved:
+                        with open(dest, 'wb') as ofd:
+                            ofd.write(filedata)
+                    vector = np.frombuffer(filedata, dtype=np.float32)
+                    assert len(vector) == 4096
                     items.append((vid, vector))
                     paths.append((vid, path))
                     print(vid, path)
@@ -136,9 +146,9 @@ def provision():
     # # graph.add_write_preprocessor('my_query_transformer_image_uri')
     # # graph.add_postprocessor('my_postprocessor_image_uri')o
 
-    pinecone.service.deploy(service_name="opengameart-search", graph=graph)
+    pinecone.service.deploy(service_name="opengameart-search2", graph=graph)
 
-    conn = pinecone.connector.connect("opengameart-search")
+    conn = pinecone.connector.connect("opengameart-search2")
 
     #acks = conn.upsert(items=items).collect()
     #results = conn.query(queries=queries).collect()
