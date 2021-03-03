@@ -43,13 +43,16 @@
             imsi = encodeURIComponent(imsi);
           }
           //if (imsi.includes('https%3A%2F%2Femh.lart.no')) {
-          if (imsi.includes('https%3A%2F%2F')) {
+          if (imsi.includes('https%3A%2F%2F') || imsi.includes('http%3A%2F%2F')) {
             imsi = decodeURIComponent(imsi);
+          }
+          if (!imsi.includes('http')) {
+            imsi = getUrlParameter('imsi', true);
           }
         }
         count = getUrlParameter('count');
         if (count === '') {
-          count = 10;
+          count = 20;
         }
 
         $("#results").html("<h2>Searching..</h2>");
@@ -64,6 +67,10 @@
 					success: function(data){
             console.log("success");
 						$("#results").html(data);
+            $("img.searchresult").each(function() {
+              $(this).parent().append('<div><a href="/ogasearch/?imsi=' + $(this)[0].src + '">More like this</a></div>');
+              $(this).parent().addClass("searchparent");
+            });
             var urlPath = '/ogasearch/?imsi=' + imsi + '&count=' + count.toString();
             window.history.pushState({"html":data,"pageTitle": 'q=imsi'},"", urlPath);
 					},
