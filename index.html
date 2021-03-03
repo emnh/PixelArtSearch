@@ -42,7 +42,8 @@
           if (imsi.includes('https://emh.lart.no') && imsi.includes('%20')) {
             imsi = encodeURIComponent(imsi);
           }
-          if (imsi.includes('https%3A%2F%2Femh.lart.no')) {
+          //if (imsi.includes('https%3A%2F%2Femh.lart.no')) {
+          if (imsi.includes('https%3A%2F%2F')) {
             imsi = decodeURIComponent(imsi);
           }
         }
