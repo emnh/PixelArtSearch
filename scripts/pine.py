@@ -22,6 +22,7 @@ from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, _
 
 class DBC(): pass
 downloadBlobContext = DBC()
+pineconeService = 'opengameart-search2'
 storepath = '/mnt/data2/opengameart2/'
 
 def main():
@@ -86,7 +87,7 @@ def loadData(connectionString):
     downloadBlobContext.blob_service_client = blob_service_client
     downloadBlobContext.container_client = container_client
 
-    conn = pinecone.connector.connect("opengameart-search2")
+    conn = pinecone.connector.connect(pineconeService)
     batch = []
     paths = []
     items = []
@@ -146,9 +147,9 @@ def provision():
     # # graph.add_write_preprocessor('my_query_transformer_image_uri')
     # # graph.add_postprocessor('my_postprocessor_image_uri')o
 
-    pinecone.service.deploy(service_name="opengameart-search2", graph=graph)
+    pinecone.service.deploy(service_name=pineconeService, graph=graph)
 
-    conn = pinecone.connector.connect("opengameart-search2")
+    conn = pinecone.connector.connect(pineconeService)
 
     #acks = conn.upsert(items=items).collect()
     #results = conn.query(queries=queries).collect()
