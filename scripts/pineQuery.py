@@ -41,6 +41,7 @@ import logging
 
 def downloadFile(url):
     try:
+        assert url.startswith('http')
         response = urllib.request.urlopen(url, timeout=10).read()
         return response
     except (HTTPError, URLError) as error:
@@ -64,6 +65,17 @@ def main():
             vid, path = stripped.split('\t')
             vid = int(vid)
             db[vid] = path
+
+    reversedb = {}
+    with open('reversedb.txt', 'r') as fd:
+        lines = fd.readlines()
+        for line in lines:
+            stripped = line.strip()
+            content, file = stripped.split(':', 1)
+            file = file.replace('"https://opengameart.org/sites/default/', '')
+            content = content.replace('/mnt/data2/opengameart2/', 'https://opengameart.org/')
+            content = content.replace('.html', '/')
+            reversedb[file.lower()] = content
 
     pinecone.init(api_key=apiKey)
     conn = pinecone.connector.connect("opengameart-search2")
@@ -103,6 +115,7 @@ def main():
             imsi = ''
             data = post_data.decode('utf-8').strip()
             print("Content-type", self.headers['Content-type'])
+            count = 10
             if self.headers['Content-type'].lower() == 'application/x-www-form-urlencoded' and 'imsi=' in data:
                 query = data #urlparse(self.path).query
                 print('QUERY', query)
@@ -115,7 +128,16 @@ def main():
                 body = json.loads(data)
                 if 'imsi' in body:
                     imsi = body['imsi']
+                if 'count' in body:
+                    try:
+                        count = int(body['count'])
+                    except:
+                        pass
                 ajax = True
+            if count < 0:
+                count = 10
+            elif count > 100:
+                count = 100
 
             print('IMSI', imsi)
 #             if not imsi and path.lower().endswith('.png') or path.lower().endswith('.jpg'):
@@ -133,6 +155,17 @@ def main():
             self.end_headers()
             #if imsi != '' and imsi.lower().endswith('.png') or imsi.lower().endswith('.jpg') or imsi.lower().endswith('.jpeg'):
             #self.wfile.write('<h1>Search Results</h1>'.encode('utf-8'))
+
+            def contentLink(url):
+                url = re.sub(r'\.zip.*', '.zip', url)
+                url = re.sub(r'\.rar.*', '.rar', url)
+                url = unquote(url).lower()
+                url = url.replace('https://emh.lart.no/opengameart2/extract/', '')
+                if url in reversedb:
+                    return reversedb[url]
+                print("NO MATCH:", url)
+                return 'https://opengameart.org/'
+
             if imsi != '' and imsi.startswith('http') and '.png' in imsi.lower() or '.jpg' in imsi.lower() or '.jpeg' in imsi.lower() or '.gif' in imsi.lower():
                 noresults = True
                 try:
@@ -146,7 +179,7 @@ def main():
 
                     queries = features
 
-                    results = conn.query(queries=queries).collect()
+                    results = conn.query(queries=queries, top_k=count).collect()
                     print(results)
                     for result in results[0].ids:
                         vid = int(result)
@@ -160,7 +193,9 @@ def main():
                             noresults = False
                             url = 'https://emh.lart.no/opengameart2/' + quote(db[vid][0:-len('.np')])
                             img = '<img class="searchresult" src="' + url + '"></img>\n'
-                            data = img.encode('utf-8')
+                            cl = contentLink(url)
+                            a = '<a href="' + cl + '">' + img + '</a>'
+                            data = a.encode('utf-8')
                             self.wfile.write(data)
                             print(result, db[vid])
                         tail = '</body></html>'
@@ -171,22 +206,25 @@ def main():
                     self.wfile.write('<h1>No results</h1>'.encode('utf-8'))
             elif imsi != '' and not 'http' in imsi:
                 words = imsi.split(' ')
+                words = [x.lower() for x in words]
                 noresults = True
                 results = []
                 for path in db.values():
                     ok = True
                     for word in words:
-                        if not word in path:
+                        if not word in path.lower():
                             ok = False
                     if ok:
                         results.append(path)
-                        if len(results) >= 10:
+                        if len(results) >= count:
                             break
                 for result in results:
                     noresults = False
                     url = 'https://emh.lart.no/opengameart2/' + quote(result[0:-len('.np')])
                     img = '<img class="searchresult" src="' + url + '"></img>\n'
-                    data = img.encode('utf-8')
+                    cl = contentLink(url)
+                    a = '<a href="' + cl + '">' + img + '</a>'
+                    data = a.encode('utf-8')
                     self.wfile.write(data)
                 if noresults:
                     self.wfile.write('<h1>No results</h1>'.encode('utf-8'))
