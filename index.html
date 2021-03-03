@@ -22,19 +22,24 @@
       </div>
     </div>
 		<script>
-			function getUrlParameter(name) {
+			function getUrlParameter(name, decode) {
 				name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
 				var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
 				var results = regex.exec(location.search);
-				return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        if (decode) {
+          return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        } else {
+          return results === null ? '' : results[1];
+        }
 			};
 			function submitSearch() {
 				//var formData = JSON.stringify($("#searchform").serializeArray());
 
         var imsi = $("#searchinput").val();
         if (imsi === '') {
-          imsi = getUrlParameter('imsi');
-          if (imsi.includes('https://emh.lart.no')) {
+          imsi = getUrlParameter('imsi', false);
+          // Some stupid stuff with regard to double url quoting
+          if (imsi.includes('https://emh.lart.no') && imsi.includes('%20')) {
             imsi = encodeURIComponent(imsi);
           }
           if (imsi.includes('https%3A%2F%2Femh.lart.no')) {

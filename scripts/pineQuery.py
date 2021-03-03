@@ -181,6 +181,7 @@ def main():
 
                     results = conn.query(queries=queries, top_k=count).collect()
                     print(results)
+                    seenurls = {}
                     for result in results[0].ids:
                         vid = int(result)
                         if not ajax:
@@ -192,6 +193,9 @@ def main():
                         if vid in db:
                             noresults = False
                             url = 'https://emh.lart.no/opengameart2/' + quote(db[vid][0:-len('.np')])
+                            if url in seenurls:
+                                continue
+                            seenurls[url] = True
                             img = '<img class="searchresult" src="' + url + '"></img>\n'
                             cl = contentLink(url)
                             a = '<a href="' + cl + '">' + img + '</a>'
