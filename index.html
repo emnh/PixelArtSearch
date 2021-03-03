@@ -34,6 +34,12 @@
         var imsi = $("#searchinput").val();
         if (imsi === '') {
           imsi = getUrlParameter('imsi');
+          if (imsi.includes('https://emh.lart.no')) {
+            imsi = encodeURIComponent(imsi);
+          }
+          if (imsi.includes('https%3A%2F%2Femh.lart.no')) {
+            imsi = decodeURIComponent(imsi);
+          }
         }
         count = getUrlParameter('count');
         if (count === '') {

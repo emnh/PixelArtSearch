@@ -41,7 +41,7 @@ import logging
 
 def downloadFile(url):
     try:
-        assert url.startswith('http')
+        assert url.lower().startswith('http')
         response = urllib.request.urlopen(url, timeout=10).read()
         return response
     except (HTTPError, URLError) as error:
@@ -166,7 +166,7 @@ def main():
                 print("NO MATCH:", url)
                 return 'https://opengameart.org/'
 
-            if imsi != '' and imsi.startswith('http') and '.png' in imsi.lower() or '.jpg' in imsi.lower() or '.jpeg' in imsi.lower() or '.gif' in imsi.lower():
+            if imsi != '' and imsi.lower().startswith('http') and '.png' in imsi.lower() or '.jpg' in imsi.lower() or '.jpeg' in imsi.lower() or '.gif' in imsi.lower():
                 noresults = True
                 try:
                     imgdata = downloadFile(imsi)
@@ -201,7 +201,7 @@ def main():
                         tail = '</body></html>'
                 except:
                     self.wfile.write('<h1>Error: Something went wrong.</h1>'.encode('utf-8'))
-                    return
+                    raise
                 if noresults:
                     self.wfile.write('<h1>No results</h1>'.encode('utf-8'))
             elif imsi != '' and not 'http' in imsi:
