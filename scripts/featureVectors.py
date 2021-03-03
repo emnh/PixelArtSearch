@@ -27,6 +27,7 @@ connectionString = settings["Values"]["AzureWebJobsStorage"]
 #os.environ["AZURE_STORAGE_CONNECTION_STRING"] = connectionString
 
 container_name = "opengameart"
+sizes = False
 
 def step1():
     try:
@@ -43,10 +44,12 @@ def step1():
         # List the blobs in the container
         blob_list = container_client.list_blobs()
         for blob in blob_list:
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob.name)
-            properties = blob_client.get_blob_properties()
-            #length = BlockBlobService.get_blob_properties(blob_service_client, container_name, blob.name).properties.content_length
-            print(blob.name + '\t' + str(properties.size))
+            if sizes:
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob.name)
+                properties = blob_client.get_blob_properties()
+                print(blob.name + '\t' + str(properties.size))
+            else:
+                print(blob.name)
 
     except Exception as ex:
         print('Exception:')
@@ -145,5 +148,43 @@ def step2():
 
     logfd.close()
 
+def step3():
+
+    from tensorflow.keras.applications.vgg16 import VGG16
+    from tensorflow.keras.preprocessing import image
+    from tensorflow.keras.applications.vgg16 import decode_predictions, preprocess_input
+    from tensorflow.keras.models import Model
+    from tensorflow.compiler import xla
+    #from keras.applications.vgg16 import VGG16
+    #from keras.preprocessing import image
+    #from keras.applications.vgg16 import decode_predictions, preprocess_input
+    #from keras.models import Model
+    #from tensorflow.compiler import xla
+    import numpy as np
+    import time
+    import os
+    import sys
+    import PIL
+    import json
+    import math
+    import multiprocessing
+    from glob import glob
+    from PIL import Image
+    from io import BytesIO
+
+    model = VGG16(weights='imagenet', include_top=True)
+    feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
+
+    def prepImage(img):
+        x = np.array(img.resize((224, 224)).convert('RGB'))
+        x = np.expand_dims(x, axis=0)
+        x = preprocess_input(x)
+        return x
+
+    dt = Image.open(sys.argv[1])
+    pimg = prepImage(dt)
+    features = feat_extractor.predict(pimg)
+    print("Features", features)
+
 if __name__ == '__main__':
-    step2()
+    step3()

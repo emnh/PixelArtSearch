@@ -27,6 +27,8 @@ def main():
     pinecone.init(api_key=apiKey)
 
     print(pinecone.service.ls())
+    #for service in pinecone.service.ls():
+    #    pinecone.service.stop(service)
 
 
 if __name__ == '__main__':
