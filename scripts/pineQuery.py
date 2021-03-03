@@ -18,10 +18,10 @@ import pinecone.service
 import pinecone.connector
 import time
 import multiprocessing
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, __version__
 
+import urllib
 from urllib.parse import urlparse
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from tensorflow.keras.applications.vgg16 import VGG16
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import decode_predictions, preprocess_input
@@ -35,22 +35,25 @@ from glob import glob
 from PIL import Image
 from io import BytesIO
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socket import timeout
 import logging
-import httplib2
+#import httplib2
 
-class DBC(): pass
-downloadBlobContext = DBC()
-
-def downloadFile(URL=None):
-    h = httplib2.Http(".cache")
-    resp, content = h.request(URL, "GET")
-    return content
+def downloadFile(url):
+    try:
+        response = urllib.request.urlopen(url, timeout=10).read()
+        return response
+    except (HTTPError, URLError) as error:
+        logging.error('Data of %s not retrieved because %s\nURL: %s', name, error, url)
+    except timeout:
+        logging.error('socket timed out - URL %s', url)
+    else:
+        logging.info('Access successful.')
 
 def main():
     'entry point'
     with open('../local.settings.json') as fd:
         settings = json.load(fd)
-    connectionString = settings["Values"]["AzureWebJobsStorage"]
     apiKey = settings['Values']['PINECONE']
 
     db = {}
@@ -82,13 +85,37 @@ def main():
 
         def do_GET(self):
             logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
+
+        def do_POST(self):
+            content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+            post_data = self.rfile.read(content_length) # <--- Gets the data itself
+            logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n", str(self.path), str(self.headers), post_data.decode('utf-8'))
+
+            #self._set_response()
+            #self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
+            print('HELLO')
+
             #self._set_response()
             imsi = ''
-            path = str(self.path)
-            if '=' in self.path and 'imsi' in self.path:
-                query = urlparse(self.path).query
-                query_components = dict(qc.split("=") for qc in query.split("&"))
+            data = post_data.decode('utf-8').strip()
+            print("Content-type", self.headers['Content-type'])
+            if self.headers['Content-type'].lower() == 'application/x-www-form-urlencoded' and 'imsi=' in data:
+                query = data #urlparse(self.path).query
+                print('QUERY', query)
+                query_components = dict(qc.split("=", 1) for qc in query.split("&"))
                 imsi = query_components["imsi"]
+                imsi = unquote(imsi)
+                imsi = imsi.strip()
+                ajax = False
+            elif self.headers['Content-type'].lower() == 'application/json':
+                body = json.loads(data)
+                if 'imsi' in body:
+                    imsi = body['imsi']
+                ajax = True
 
             print('IMSI', imsi)
 #             if not imsi and path.lower().endswith('.png') or path.lower().endswith('.jpg'):
@@ -100,47 +127,71 @@ def main():
 #                 with open(dest, 'rb') as infd:
 #                     self.wfile.write(infd.read())
 
-            if imsi and imsi.lower().endswith('.png') or imsi.lower().endswith('.jpg'):
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
+            sys.stdout.flush()
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            #if imsi != '' and imsi.lower().endswith('.png') or imsi.lower().endswith('.jpg') or imsi.lower().endswith('.jpeg'):
+            #self.wfile.write('<h1>Search Results</h1>'.encode('utf-8'))
+            if imsi != '' and imsi.startswith('http') and '.png' in imsi.lower() or '.jpg' in imsi.lower() or '.jpeg' in imsi.lower() or '.gif' in imsi.lower():
+                noresults = True
+                try:
+                    imgdata = downloadFile(imsi)
+                    file_imgdata = BytesIO(imgdata)
+                    dt = Image.open(file_imgdata)
+                    pimg = prepImage(dt)
+                    features = feat_extractor.predict(pimg)
+                    print("Features", features)
+                    print(features.shape, features.dtype)
 
-                imgdata = downloadFile(imsi)
-                file_imgdata = BytesIO(imgdata)
-                dt = Image.open(file_imgdata)
-                pimg = prepImage(dt)
-                features = feat_extractor.predict(pimg)
-                print("Features", features)
-                print(features.shape, features.dtype)
+                    queries = features
 
-                queries = features
-
-                results = conn.query(queries=queries).collect()
-                print(results)
-                for result in results[0].ids:
-                    vid = int(result)
-                    if vid in db:
-                        url = 'http://emh.lart.no/opengameart2/' + quote(db[vid][0:-len('.np')]) + '\n'
-                        img = '<img src="' + url + '"></img>'
-                        data = img.encode('ascii')
-                        self.wfile.write(data)
-                        print(result, db[vid])
+                    results = conn.query(queries=queries).collect()
+                    print(results)
+                    for result in results[0].ids:
+                        vid = int(result)
+                        if not ajax:
+                            link = '<link rel="stylesheet" href="../index.css"></link>'
+                        else:
+                            link = ''
+                        head = '<html><head>' + link + '</head><body>'
+                        self.wfile.write(head.encode('utf-8'))
+                        if vid in db:
+                            noresults = False
+                            url = 'https://emh.lart.no/opengameart2/' + quote(db[vid][0:-len('.np')])
+                            img = '<img class="searchresult" src="' + url + '"></img>\n'
+                            data = img.encode('utf-8')
+                            self.wfile.write(data)
+                            print(result, db[vid])
+                        tail = '</body></html>'
+                except:
+                    self.wfile.write('<h1>Error: Something went wrong.</h1>'.encode('utf-8'))
+                    return
+                if noresults:
+                    self.wfile.write('<h1>No results</h1>'.encode('utf-8'))
+            elif imsi != '' and not 'http' in imsi:
+                words = imsi.split(' ')
+                noresults = True
+                results = []
+                for path in db.values():
+                    ok = True
+                    for word in words:
+                        if not word in path:
+                            ok = False
+                    if ok:
+                        results.append(path)
+                        if len(results) >= 10:
+                            break
+                for result in results:
+                    noresults = False
+                    url = 'https://emh.lart.no/opengameart2/' + quote(result[0:-len('.np')])
+                    img = '<img class="searchresult" src="' + url + '"></img>\n'
+                    data = img.encode('utf-8')
+                    self.wfile.write(data)
+                if noresults:
+                    self.wfile.write('<h1>No results</h1>'.encode('utf-8'))
             else:
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                self.wfile.write('Nothing'.encode('ascii'))
-                self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
-
-
-        def do_POST(self):
-            content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
-            post_data = self.rfile.read(content_length) # <--- Gets the data itself
-            logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-                    str(self.path), str(self.headers), post_data.decode('utf-8'))
-
-            self._set_response()
-            self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
+                self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
     def run(server_class=HTTPServer, handler_class=S, port=7899):
         logging.basicConfig(level=logging.INFO)
