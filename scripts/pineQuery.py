@@ -180,10 +180,17 @@ def main():
 
                     queries = features
 
-                    results = conn.query(queries=queries, top_k=count).collect()
+                    results = conn.query(queries=queries, top_k=4*count).collect()
                     print(results)
                     seenurls = {}
-                    for result in results[0].ids:
+                    seenscores = {}
+                    currentCount = 0
+                    for result, score in zip(results[0].ids, results[0].scores):
+                        if currentCount >= count:
+                            break
+                        if score in seenscores:
+                            continue
+                        seenscores[score] = True
                         vid = int(result)
                         if not ajax:
                             link = '<link rel="stylesheet" href="../index.css"></link>'
@@ -202,6 +209,7 @@ def main():
                             a = '<a href="' + cl + '">' + img + '</a>'
                             data = a.encode('utf-8')
                             self.wfile.write(data)
+                            currentCount += 1
                             print(result, db[vid])
                         tail = '</body></html>'
                 except:
