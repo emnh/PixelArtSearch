@@ -35,6 +35,7 @@ from glob import glob
 from PIL import Image
 from io import BytesIO
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn, ForkingMixIn
 from socket import timeout
 import logging
 #import httplib2
@@ -235,7 +236,10 @@ def main():
             else:
                 self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
-    def run(server_class=HTTPServer, handler_class=S, port=7899):
+    class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+        """Handle requests in a separate thread."""
+
+    def run(server_class=ThreadedHTTPServer, handler_class=S, port=7899):
         logging.basicConfig(level=logging.INFO)
         server_address = ('', port)
         httpd = server_class(server_address, handler_class)
