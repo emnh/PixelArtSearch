@@ -78,8 +78,8 @@ def main():
             content = content.replace('.html', '/')
             reversedb[file.lower()] = content
 
-    pinecone.init(api_key=apiKey)
-    conn = pinecone.connector.connect("opengameart-search2")
+    #pinecone.init(api_key=apiKey)
+    #conn = pinecone.connector.connect("opengameart-search2")
 
     model = VGG16(weights='imagenet', include_top=True)
     feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
@@ -180,11 +180,14 @@ def main():
 
                     queries = features
 
+                    pinecone.init(api_key=apiKey)
+                    conn = pinecone.connector.connect("opengameart-search2")
                     results = conn.query(queries=queries, top_k=4*count).collect()
                     print(results)
                     seenurls = {}
                     seenscores = {}
                     currentCount = 0
+                    tail = ''
                     for result, score in zip(results[0].ids, results[0].scores):
                         if currentCount >= count:
                             break
@@ -212,6 +215,7 @@ def main():
                             currentCount += 1
                             print(result, db[vid])
                         tail = '</body></html>'
+                    self.wfile.write(tail.encode('utf-8'))
                 except:
                     self.wfile.write('<h1>Error: Something went wrong.</h1>'.encode('utf-8'))
                     raise
