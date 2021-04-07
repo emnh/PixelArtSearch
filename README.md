@@ -27,6 +27,75 @@ But these features are based on neurons in the neural network for VGG16 (which i
 And the reason we need these vectors is that it's easy to use Euclidean distance or cosine similarity or another measure on two vectors to see if they are similar, and then consequently the images are similar.
 Furthermore there is search technology on these vectors that enable quick search on a large amount of them.
 
+Here's a simplified python script to show how to do the feature extraction:
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim: ft=python ts=4 sw=4 sts=4 et fenc=utf-8
+
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.vgg16 import decode_predictions, preprocess_input
+from tensorflow.keras.models import Model
+from tensorflow.compiler import xla
+import numpy as np
+import time
+import os
+import sys
+import PIL
+import json
+import math
+import multiprocessing
+from glob import glob
+from PIL import Image
+from io import BytesIO
+
+model = VGG16(weights='imagenet', include_top=True)
+feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
+
+def prepImage(img):
+    x = np.array(img.resize((224, 224)).convert('RGB'))
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+    return x
+
+def main():
+    'entry point'
+    fname = 'demo.jpg'
+    dt = Image.open(fname)
+    pimg = prepImage(dt)
+
+    print("Computing feature vector", fname)
+    features = feat_extractor.predict(pimg)
+    print(features)
+
+if __name__ == '__main__':
+    main()
+```
+
+Here's the output of the script:
+```bash
+emh@frostpunk ~/public_html/ogasearch 0% ./test.py                                                                                                                                                                                                                                                                                                                         (git)-[gh-pages]
+2021-04-07 18:48:03.158023: W tensorflow/stream_executor/platform/default/dso_loader.cc:60] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2021-04-07 18:48:03.158082: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2021-04-07 18:48:07.783109: I tensorflow/compiler/jit/xla_cpu_device.cc:41] Not creating XLA devices, tf_xla_enable_xla_devices not set
+2021-04-07 18:48:07.783485: W tensorflow/stream_executor/platform/default/dso_loader.cc:60] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2021-04-07 18:48:07.783530: W tensorflow/stream_executor/cuda/cuda_driver.cc:326] failed call to cuInit: UNKNOWN ERROR (303)
+2021-04-07 18:48:07.783580: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (frostpunk): /proc/driver/nvidia/version does not exist
+2021-04-07 18:48:07.784058: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2021-04-07 18:48:07.784513: I tensorflow/compiler/jit/xla_gpu_device.cc:99] Not creating XLA devices, tf_xla_enable_xla_devices not set
+2021-04-07 18:48:08.599925: W tensorflow/core/framework/cpu_allocator_impl.cc:80] Allocation of 411041792 exceeds 10% of free system memory.
+2021-04-07 18:48:09.194634: W tensorflow/core/framework/cpu_allocator_impl.cc:80] Allocation of 411041792 exceeds 10% of free system memory.
+2021-04-07 18:48:09.385612: W tensorflow/core/framework/cpu_allocator_impl.cc:80] Allocation of 411041792 exceeds 10% of free system memory.
+2021-04-07 18:48:13.033066: W tensorflow/core/framework/cpu_allocator_impl.cc:80] Allocation of 411041792 exceeds 10% of free system memory.
+Computing feature vector demo.jpg
+2021-04-07 18:48:13.706621: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:116] None of the MLIR optimization passes are enabled (registered 2)
+2021-04-07 18:48:13.717564: I tensorflow/core/platform/profile_utils/cpu_utils.cc:112] CPU Frequency: 2199995000 Hz
+[[0.        3.1128967 1.5611947 ... 1.2625191 0.7709812 0.       ]]
+./test.py  12.20s user 4.66s system 132% cpu 12.731 total
+```
+
 # How did I maintain a link between the image URLs and the vector datebase feature vectors?
 I also wanted to put all the image URLs into a SQL database in the end, and have a flag for whether I had made the VGG16 feature extraction and whether it was added to the vector database ([Milvus](https://milvus.io/) or [Pinecone](https://www.pinecone.io/).
 It's essential to be able to map back and forth between an integer primary key, which is used in [Pineone](https://www.pinecone.io/), and the URL and perhaps other metadata that belongs to the image, as [Pinecone](https://www.pinecone.io/ doesn't store other metadata than the primary key.
