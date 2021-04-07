@@ -139,7 +139,7 @@ Well it just cost 50 USD but I could have done it for free on my DigitalOcean se
 
 ## Script Locations
 
- - Azure OpenGameArt crawler in \*.cs files. I moved the crawled files to DigitalOcean later on because of pricing.
+ - Azure Functions OpenGameArt crawler in \*.cs files. I moved the crawled files to DigitalOcean later on because of pricing.
  - Scripts for [machine learning](https://github.com/emnh/PixelArtSearch/blob/master/scripts/featureVectors.py) and [Pinecone query server](https://github.com/emnh/PixelArtSearch/blob/master/scripts/pineQuery.py) in /scripts.
  - [Front page source](https://github.com/emnh/PixelArtSearch/blob/master/index.html).
  - See also [source code for t-SNE embedding of OpenGameArt images](https://github.com/emnh/opengameart/).
