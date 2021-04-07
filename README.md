@@ -15,6 +15,25 @@ The first thing I had to do was retrieve the search results for the query I was 
 Then I had to retrieve each HTML page which was in the search results index and parse the HTML for links to files.
 OpenGameArt contains a lot of archive files like zip and rar files, so I then had to unpack them to get to the images.
 
+For example here is a snippet showing how to parse the content page and get file links:
+```csharp
+responseBody = await Common.ReadURIOrCache(blob, Common.BaseURI + page, client);
+
+var htmlDoc = new HtmlDocument();
+htmlDoc.LoadHtml(responseBody);
+var htmlBody = htmlDoc.DocumentNode.SelectSingleNode("//body");
+
+foreach (var nNode in htmlBody.Descendants("a"))
+{
+    if (nNode.NodeType == HtmlNodeType.Element &&
+        nNode.Attributes["href"] != null &&
+        nNode.Attributes["href"].Value.Contains("/default/files/"))
+    {
+        msg.Add(HttpUtility.HtmlDecode(nNode.Attributes["href"].Value.Replace(Common.FileURI, "")));
+    }
+}
+```
+
 ## Which technology did I use for the crawling and how much did it cost?
 I used Azure Functions to do the crawling steps, with some back and forth manual intervention to correct things as needed.
 Each step had its own queue and then put the job for the next step on the next queue.
