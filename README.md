@@ -28,7 +28,7 @@ And the reason we need these vectors is that it's easy to use Euclidean distance
 Furthermore there is search technology on these vectors that enable quick search on a large amount of them.
 
 # How did I maintain a link between the image URLs and the vector datebase feature vectors?
-I also wanted to put all the image URLs into a SQL database in the end, and have a flag for whether I had made the VGG16 feature extraction and whether it was added to the vector database (Milvus or [Pinecone](https://www.pinecone.io/).
+I also wanted to put all the image URLs into a SQL database in the end, and have a flag for whether I had made the VGG16 feature extraction and whether it was added to the vector database ([Milvus](https://milvus.io/) or [Pinecone](https://www.pinecone.io/).
 It's essential to be able to map back and forth between an integer primary key, which is used in [Pineone](https://www.pinecone.io/), and the URL and perhaps other metadata that belongs to the image, as [Pinecone](https://www.pinecone.io/ doesn't store other metadata than the primary key.
 
 # How long time did it take?
@@ -62,7 +62,7 @@ It could be interesting to see whether Milvus could also deliver similar results
 
 # Script Locations
 
- - Azure OpenGameArt crawler in \*.cs files. Moved to DigitalOcean later on because of pricing.
- - Scripts for machine learning and pinecone.io query server in /scripts.
- - /index.html is front page.
- - See also https://github.com/emnh/opengameart/ .
+ - Azure OpenGameArt crawler in \*.cs files. I moved the crawled files to DigitalOcean later on because of pricing.
+ - Scripts for [machine learning](https://github.com/emnh/PixelArtSearch/blob/master/scripts/featureVectors.py) and [Pinecone query server](https://github.com/emnh/PixelArtSearch/blob/master/scripts/pineQuery.py) in /scripts.
+ - [Front page source](https://github.com/emnh/PixelArtSearch/blob/master/index.html).
+ - See also [source code for t-SNE embedding of OpenGameArt images](https://github.com/emnh/opengameart/).
