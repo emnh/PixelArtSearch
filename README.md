@@ -106,9 +106,15 @@ I don't remember how much time it took to insert the vectors into the [Pinecone]
 
 # What does the final search look like?
 The final search with an example can be found [here](https://emh.lart.no/ogasearch/?imsi=monster%20stone%20soup&count=20).
-There are two ways of searching, either you can put a keyword, which just plainly (and a bit slowly at O(n)) iterates linearly through the URLs looking for a match.
-I stuck with linear search since it's simple to implement and all the URLs are kept in memory anyway so it's not that slow.
 It looks like this: ![OpenGameArt Search](https://emh.lart.no/ogasearch/demo.jpg)
+
+# Two ways of searching: Words and images
+There are two ways of searching, either you can put a keyword, which just plainly (and a bit slowly at O(n)) iterates linearly through the URLs looking for a string match.
+I stuck with linear search since it's simple to implement and all the URLs are kept in memory anyway so it's not that slow.
+I dumped all the URLs to a text file and loading it to memory on query server load instead of querying the SQL server each time.
+And the other way of searching is that you put an image URL, which will run feature extraction on your image (on my server) and then query Pinecone for similar vectors, which will map to primary keys, which in turn I look up in the list of URLs.
+I also maintain a "reverse database" in order to link back to the OpenGameArt site for images found (there are some bugs with this I haven't fixed yet, in which case it just links to OpenGameArt main page).
+Finally there is also a link under each image to search for similar images, which implicitly uses the second kind of query by image.
 
 # What are some problems in encountered?
 At the end I also added a quick fix to remove near-duplicate image results which had an identical score.
