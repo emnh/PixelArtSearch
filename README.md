@@ -104,6 +104,7 @@ Computing feature vector demo.jpg
 ## How did I maintain a link between the image URLs and the vector datebase feature vectors?
 I also wanted to put all the image URLs into a SQL database in the end, and have a flag for whether I had made the VGG16 feature extraction and whether it was added to the vector database ([Milvus](https://milvus.io/) or [Pinecone](https://www.pinecone.io/).
 It's essential to be able to map back and forth between an integer primary key, which is used in [Pineone](https://www.pinecone.io/), and the URL and perhaps other metadata that belongs to the image, as [Pinecone](https://www.pinecone.io/ doesn't store other metadata than the primary key.
+In the end I dumbed the SQL database to a tab separated text file and loaded it on query server startup.
 
 ## How long time did it take?
 I think I spent a week in total to run all the code to finish, each step taking on the order of a day or two, crawl, computing feature vectors.
@@ -114,7 +115,7 @@ There are two ways of searching, either you can put a keyword, which just plainl
 I stuck with linear search since it's simple to implement and all the URLs are kept in memory anyway so it's not that slow.
 I dumped all the URLs to a text file and loading it to memory on query server load instead of querying the SQL server each time.
 And the other way of searching is that you put an image URL, which will run feature extraction on your image (on my server) and then query Pinecone for similar vectors, which will map to primary keys, which in turn I look up in the list of URLs.
-I also maintain a "reverse database" in order to link back to the OpenGameArt site for images found (there are some bugs with this I haven't fixed yet, in which case it just links to OpenGameArt main page).
+I also maintain a "reverse database" text file in order to link back to the OpenGameArt site for images found (there are some bugs with this I haven't fixed yet, in which case it just links to OpenGameArt main page). This file is also loaded on query server startup.
 Finally there is also a link under each image to search for similar images, which implicitly uses the second kind of query by image.
 
 ## What are some problems I encountered?
@@ -126,15 +127,15 @@ I don't feel like posting snippets from the scripts and explaining as they are a
 Additionally I moved the files from Azure storage to my DigitalOcean server mid-way, before processing the feature extraction, so there's some inconsistent data location handling.
 
 ## What are the final takeaways?
-I recommend doing the crawl perhaps on a cheaper substrate than Azure Functions and Azure Storage to save some money, for example your own server or a fixed price Cloud server.
+ - I recommend doing the crawl perhaps on a cheaper substrate than Azure Functions and Azure Storage to save some money, for example your own server or a fixed price Cloud server.
 Well it just cost 50 USD but I could have done it for free on my DigitalOcean server, so that's why.
-I recommend building a more robust crawler, idempotent and restartable at any point which it may terminate at or require some manual intervention (for example I exceeded the Azure Function maximum run time of 5 minutes on extracting some of the large zip files, so I extracted them running the Functions locally in VS Code).
-One thing I regret that I didn't get done this time was to extract all the tiles from tile sheets to individual images for searching. That would have made the search even more useful. On the other hand it could have cluttered the similarity search with too many nearly identical images.
+ - I recommend building a more robust crawler, idempotent and restartable at any point which it may terminate at or require some manual intervention (for example I exceeded the Azure Function maximum run time of 5 minutes on extracting some of the large zip files, so I extracted them running the Functions locally in VS Code).
+ - One thing I regret that I didn't get done this time was to extract all the tiles from tile sheets to individual images for searching. That would have made the search even more useful. On the other hand it could have cluttered the similarity search with too many nearly identical images.
 
 ## Conclusion and final remarks
-It might also be useful to prototype the system using a bit of content, then run the whole pipeline end to end on all the content once you get it working, instead of completing the first step in crawl, then doing all feature extraction and then doing all database insertion as I did.
-In conclusion what I made was a bit of a hack, not so robust scripting for updating for new content, but it worked fine as a prototype and gave decent image search results (not always so spot on, but I blame it on that the feature extraction is not really targeted at tiny pixel art (though resized/upscaled before feature extraction)).
-It could be interesting to see whether Milvus could also deliver similar results, a side by side comparison of some kind, on speed and quality, but I found it much easier to use [Pinecone](https://www.pinecone.io/) since it's already up and running as a service so that I didn't have to run my own vector database.
+ - It might also be useful to prototype the system using a bit of content, then run the whole pipeline end to end on all the content once you get it working, instead of completing the first step in crawl, then doing all feature extraction and then doing all database insertion as I did.
+ - In conclusion what I made was a bit of a hack, not so robust scripting for updating for new content, but it worked fine as a prototype and gave decent image search results (not always so spot on, but I blame it on that the feature extraction is not really targeted at tiny pixel art (though resized/upscaled before feature extraction)).
+ - It could be interesting to see whether Milvus could also deliver similar results, a side by side comparison of some kind, on speed and quality, but I found it much easier to use [Pinecone](https://www.pinecone.io/) since it's already up and running as a service so that I didn't have to run my own vector database.
 
 ## Script Locations
 
