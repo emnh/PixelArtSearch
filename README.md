@@ -111,11 +111,11 @@ I think I spent a week in total to run all the code to finish, each step taking 
 I don't remember how much time it took to insert the vectors into the [Pinecone](https://www.pinecone.io/) database, but I think it was not the most time-consuming step.
 
 ## Two ways of searching: Words and images
-There are two ways of searching, either you can put a keyword, which just plainly (and a bit slowly at O(n)) iterates linearly through the URLs looking for a string match.
+ - There are two ways of searching, either you can put a keyword, which just plainly (and a bit slowly at O(n)) iterates linearly through the URLs looking for a string match.
 I stuck with linear search since it's simple to implement and all the URLs are kept in memory anyway so it's not that slow.
 I dumped all the URLs to a text file and loading it to memory on query server load instead of querying the SQL server each time.
-And the other way of searching is that you put an image URL, which will run feature extraction on your image (on my server) and then query Pinecone for similar vectors, which will map to primary keys, which in turn I look up in the list of URLs.
-I also maintain a "reverse database" text file in order to link back to the OpenGameArt site for images found (there are some bugs with this I haven't fixed yet, in which case it just links to OpenGameArt main page). This file is also loaded on query server startup.
+ - The other way of searching is that you put an image URL, which will run feature extraction on your image (on my server) and then query Pinecone for similar vectors, which will map to primary keys, which in turn I look up in the list of URLs.
+ - I also maintain a "reverse database" text file in order to link back to the OpenGameArt site for images found (there are some bugs with this I haven't fixed yet, in which case it just links to OpenGameArt main page). This file is also loaded on query server startup.
 Finally there is also a link under each image to search for similar images, which implicitly uses the second kind of query by image.
 
 ## What are some problems I encountered?
