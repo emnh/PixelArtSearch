@@ -21,9 +21,9 @@ Each step had its own queue and then put the job for the next step on the next q
 In the end the invocations cost around 50 USD on Azure, for let's say 10-20 million Function invocations if I remember correctly.
 
 ## Which alternatives did I investigate?
-I tried to use the open source Milvus database, but it crashed on my DigitalOcean server because I didn't have enough memory on it.
+I tried to use the open source [Milvus](https://milvus.io/) database, but it crashed on my DigitalOcean server because I didn't have enough memory on it.
 Then I accidentally and luckily discovered the link to [Pinecone](https://www.pinecone.io/) in a Hacker News comment section and decided to use that instead, as the trial was free and I didn't have to expand my server memory to use Milvus.
-In the end I expanded my server anyway, but I didn't try Milvus again (at least not yet).
+In the end I expanded my server anyway, but I didn't try [Milvus](https://milvus.io/) again (at least not yet).
 
 ## What data do you need on each image to create a reverse image search?
 I used [VGG16 feature extraction](https://towardsdatascience.com/extract-features-visualize-filters-and-feature-maps-in-vgg16-and-vgg19-cnn-models-d2da6333edd0) in [my script for this](https://github.com/emnh/PixelArtSearch/blob/master/scripts/featureVectors.py).
