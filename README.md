@@ -2,6 +2,7 @@
 
 ## What does the final search look like?
 The final search with an example can be found [here](https://emh.lart.no/ogasearch/?imsi=monster%20stone%20soup&count=20).
+
 It looks like this: ![OpenGameArt Search](https://emh.lart.no/ogasearch/demo.jpg)
 
 ## Why did I want a reverse image search for OpenGameArt?
