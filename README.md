@@ -1,5 +1,9 @@
 # Pixel Art Reverse Image Search for OpenGameArt
 
+# What does the final search look like?
+The final search with an example can be found [here](https://emh.lart.no/ogasearch/?imsi=monster%20stone%20soup&count=20).
+It looks like this: ![OpenGameArt Search](https://emh.lart.no/ogasearch/demo.jpg)
+
 # Why did I want a reverse image search for OpenGameArt?
 I wanted to build a reverse image search for OpenGameArt as Google Image Search and TinEye don't give good results for it.
 I had previously generated a [huge tile map](https://opengameart.org/content/all-of-2d-art-on-opengameart-in-1-sprite-sheet) to give an overview of similar images on OpenGameArt, but it wasn't very resource friendly on the web or image browser and had to be split into smaller files, plus it's not searchable in any way, just scrollable.
@@ -103,10 +107,6 @@ It's essential to be able to map back and forth between an integer primary key, 
 # How long time did it take?
 I think I spent a week in total to run all the code to finish, each step taking on the order of a day or two, crawl, computing feature vectors.
 I don't remember how much time it took to insert the vectors into the [Pinecone](https://www.pinecone.io/) database, but I think it was not the most time-consuming step.
-
-# What does the final search look like?
-The final search with an example can be found [here](https://emh.lart.no/ogasearch/?imsi=monster%20stone%20soup&count=20).
-It looks like this: ![OpenGameArt Search](https://emh.lart.no/ogasearch/demo.jpg)
 
 # Two ways of searching: Words and images
 There are two ways of searching, either you can put a keyword, which just plainly (and a bit slowly at O(n)) iterates linearly through the URLs looking for a string match.
