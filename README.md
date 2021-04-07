@@ -117,7 +117,7 @@ And the other way of searching is that you put an image URL, which will run feat
 I also maintain a "reverse database" in order to link back to the OpenGameArt site for images found (there are some bugs with this I haven't fixed yet, in which case it just links to OpenGameArt main page).
 Finally there is also a link under each image to search for similar images, which implicitly uses the second kind of query by image.
 
-## What are some problems in encountered?
+## What are some problems I encountered?
 At the end I also added a quick fix to remove near-duplicate image results which had an identical score.
 I ran into some troubles on the search page with "double" URL encoding, because I had stored the files using URL encoding in the file system, but I worked around it with some detection code on the frontend for when the browser double-encoded the URL-encoded file names.
 I recommend storing the crawled files without URL encoding.
