@@ -192,11 +192,13 @@ def step4():
     blob_service_client = BlobServiceClient.from_connection_string(connectionString)
     container_client = blob_service_client.get_container_client("opengameart")
 
-    with open('copyFromAzure.txt') as fd:
+    with open('allblobs.txt') as fd:
         paths = [x.strip() for x in fd.readlines()]
 
     container_name = 'opengameart'
-    for path in paths:
+    for i, path in enumerate(paths):
+        if i % 1000 == 0:
+            print(i, i * 100 // len(paths))
         dest = '/mnt/data2/opengameart2/' + path
         if '__MACOSX' in path:
             continue
